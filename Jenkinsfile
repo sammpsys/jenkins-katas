@@ -18,11 +18,13 @@ pipeline {
         }
 
         stage('build app') {
-            steps {
-                skipDefaultCheckout(true)
-                unstash 'code'
-            }
+          options {
+            skipDefaultCheckout(true)
           }
+          steps {
+              unstash 'code'
+          }
+        }
         stage('test app') {
             agent {
                 docker {

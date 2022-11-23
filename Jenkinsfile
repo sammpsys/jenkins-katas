@@ -1,13 +1,41 @@
 pipeline {
   agent any
   stages {
-    stage('Say Hello') {
-      steps {
-        sh 'echo "hello world"'
-        sh "ls -la ${pwd()}"
-        deleteDir()
-        sh "ls -la ${pwd()}"
-      }
+        stage('clone down') {
+            agent {
+                label 'master-label'
+            }
+            steps{
+                stash excludes: '.git/', name: 'code'
+            }
+    }
+    stage('Parallel execution') {
+      parallel {
+        stage('Say Hello') {
+          steps {
+            sh 'echo "hello world"'
+          }
+        }
+
+        stage('build app') {
+            steps {
+                skipDefaultCheckout(true)
+                unstash 'code'
+            }
+          }
+        stage('test app') {
+            agent {
+                docker {
+                    image 'gradle:6-jdk11'
+                }
+            }
+            steps {
+                unstash 'code'
+                sh './ci/unit-test-app.sh'
+                junit 'app/build/test-results/test/TEST-*.xml'
+            }
+        }
+        }
     }
 
   }
